@@ -20,8 +20,7 @@ func setupSignalHandler(phs phase.Phaser) {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
-		fmt.Println()
-		fmt.Println(sig)
+		log.Printf("Received signal %v\n", sig)
 		phs.Cancel()
 	}()
 }
@@ -65,7 +64,7 @@ func main() {
 
 	cfg, err := parseFlags()
 	if err != nil {
-		fmt.Printf("Could not get configuration: %v", err)
+		log.Printf("Could not get configuration: %v", err)
 		os.Exit(1)
 	}
 	setupSignalHandler(phs0)
@@ -111,7 +110,7 @@ func XMPPBot(phs phase.Phaser, cfg *config) {
 		}
 		switch v := chat.(type) {
 		case xmpp.Chat:
-			fmt.Println(v.Remote, v.Text)
+			log.Printf("%s: %s\n", v.Remote, v.Text)
 			cmd := strings.Split(v.Text, " ")[0]
 			if command, exists := commands[cmd]; exists {
 				replyMsg := command(phs, v.Text)
@@ -125,7 +124,7 @@ func XMPPBot(phs phase.Phaser, cfg *config) {
 				}
 			}
 		case xmpp.Presence:
-			fmt.Println(v.From, v.Show)
+			log.Printf("%s: %s\n", v.From, v.Show)
 		}
 	}
 }
