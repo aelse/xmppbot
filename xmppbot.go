@@ -15,7 +15,7 @@ import (
 	"github.com/mattn/go-xmpp"
 )
 
-func setupSignalHandler(phs phase.Phaser) {
+func setupSignalHandler(phs *phase.Phaser) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -75,7 +75,7 @@ func main() {
 	<-phs0.Done()
 }
 
-func XMPPBot(phs phase.Phaser, cfg *config) {
+func XMPPBot(phs *phase.Phaser, cfg *config) {
 	defer phs.Cancel()
 
 	options := xmpp.Options{
