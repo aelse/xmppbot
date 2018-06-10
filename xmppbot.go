@@ -48,7 +48,7 @@ func parseFlags() (*config, error) {
 	flag.StringVar(&cfg.MQTTPass, "mqtt-pass", "", "garage mqtt password")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: example [options]\n")
+		fmt.Fprintf(os.Stderr, "usage: xmppbot [options]\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
