@@ -37,7 +37,7 @@ func garage(addr, username, password string) Command {
 		recvErr := make(chan error)
 
 		mq := client.New(&client.Options{
-			// Define the processing of the error handler.
+			// Any error is pushed to the error channel, which triggers the failure path.
 			ErrorHandler: func(err error) {
 				recvErr <- err
 			},
