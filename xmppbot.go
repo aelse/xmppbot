@@ -44,7 +44,7 @@ func parseFlags() (*config, error) {
 	flag.Parse()
 	if cfg.Username == "" || cfg.Password == "" {
 		flag.Usage()
-		return nil, errors.New("invalid or missing args")
+		return nil, errors.New("missing username or password")
 	}
 	return cfg, nil
 }
