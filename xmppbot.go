@@ -1,30 +1,36 @@
 package main
 
 import (
-	"bufio"
-	"crypto/tls"
+	"context"
 	"flag"
 	"fmt"
-	"github.com/mattn/go-xmpp"
 	"log"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+
+	"github.com/aelse/phase"
+	"github.com/mattn/go-xmpp"
 )
 
-var server = flag.String("server", "talk.google.com:443", "server")
-var username = flag.String("username", "", "username")
-var password = flag.String("password", "", "password")
-var status = flag.String("status", "xa", "status")
-var statusMessage = flag.String("status-msg", "I for one welcome our new codebot overlords.", "status message")
-var notls = flag.Bool("notls", false, "No TLS")
-var debug = flag.Bool("debug", false, "debug output")
-var session = flag.Bool("session", false, "use server session")
-
-func serverName(host string) string {
-	return strings.Split(host, ":")[0]
+func setupSignalHandler(phs phase.Phaser) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigs
+		fmt.Println()
+		fmt.Println(sig)
+		phs.Cancel()
+	}()
 }
 
 func main() {
+	phs0 := phase.FromContext(context.Background())
+
+	var server = flag.String("server", "talk.google.com:443", "server")
+	var username = flag.String("username", "", "username")
+	var password = flag.String("password", "", "password")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: example [options]\n")
 		flag.PrintDefaults()
@@ -32,63 +38,66 @@ func main() {
 	}
 	flag.Parse()
 	if *username == "" || *password == "" {
-		if *debug && *username == "" && *password == "" {
-			fmt.Fprintf(os.Stderr, "no username or password were given; attempting ANONYMOUS auth\n")
-		} else if *username != "" || *password != "" {
-			flag.Usage()
-		}
+		flag.Usage()
 	}
 
-	if !*notls {
-		xmpp.DefaultConfig = tls.Config{
-			ServerName:         serverName(*server),
-			InsecureSkipVerify: false,
-		}
+	setupSignalHandler(phs0)
+
+	phs1 := phs0.Next()
+	go XMPPBot(phs1, *server, *username, *password)
+
+	<-phs0.Done()
+}
+
+func XMPPBot(phs phase.Phaser, addr, username, password string) {
+	defer phs.Cancel()
+
+	options := xmpp.Options{
+		Host:     addr,
+		User:     username,
+		Password: password,
 	}
 
-	var talk *xmpp.Client
-	var err error
-	options := xmpp.Options{Host: *server,
-		User:          *username,
-		Password:      *password,
-		NoTLS:         *notls,
-		Debug:         *debug,
-		Session:       *session,
-		Status:        *status,
-		StatusMessage: *statusMessage,
-	}
-
-	talk, err = options.NewClient()
-
+	talk, err := options.NewClient()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Could not create talk client: %v\n", err)
+		return
 	}
 
+	// Close everything when our context ends.
 	go func() {
-		for {
-			chat, err := talk.Recv()
-			if err != nil {
-				log.Fatal(err)
-			}
-			switch v := chat.(type) {
-			case xmpp.Chat:
-				fmt.Println(v.Remote, v.Text)
-			case xmpp.Presence:
-				fmt.Println(v.From, v.Show)
-			}
-		}
+		<-phs.Done()
+		talk.Close()
+		phs.Cancel()
 	}()
-	for {
-		in := bufio.NewReader(os.Stdin)
-		line, err := in.ReadString('\n')
-		if err != nil {
-			continue
-		}
-		line = strings.TrimRight(line, "\n")
 
-		tokens := strings.SplitN(line, " ", 2)
-		if len(tokens) == 2 {
-			talk.Send(xmpp.Chat{Remote: tokens[0], Type: "chat", Text: tokens[1]})
+	commands := map[string]Command{
+		"ping": ping,
+	}
+
+	for {
+		chat, err := talk.Recv()
+		if err != nil {
+			log.Printf("Talk client error: %v\n", err)
+			break
+		}
+		switch v := chat.(type) {
+		case xmpp.Chat:
+			fmt.Println(v.Remote, v.Text)
+			cmd := strings.Split(v.Text, " ")[0]
+			if command, exists := commands[cmd]; exists {
+				replyMsg := command(v.Text)
+				reply := xmpp.Chat{
+					Remote: v.Remote,
+					Type:   "chat",
+					Text:   replyMsg,
+				}
+				if _, err := talk.Send(reply); err != nil {
+					log.Printf("Failed to send reply: %v", err)
+				}
+			}
+		case xmpp.Presence:
+			fmt.Println(v.From, v.Show)
 		}
 	}
 }
