@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -25,26 +26,41 @@ func setupSignalHandler(phs phase.Phaser) {
 	}()
 }
 
-func main() {
-	phs0 := phase.FromContext(context.Background())
+type config struct {
+	Server   string
+	Username string
+	Password string
+}
 
-	var server = flag.String("server", "talk.google.com:443", "server")
-	var username = flag.String("username", "", "username")
-	var password = flag.String("password", "", "password")
+func parseFlags() (*config, error) {
+	cfg := &config{}
+	flag.StringVar(&cfg.Server, "server", "talk.google.com:443", "server")
+	flag.StringVar(&cfg.Username, "username", "", "username")
+	flag.StringVar(&cfg.Password, "password", "", "password")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: example [options]\n")
 		flag.PrintDefaults()
-		os.Exit(2)
 	}
 	flag.Parse()
-	if *username == "" || *password == "" {
+	if cfg.Username == "" || cfg.Password == "" {
 		flag.Usage()
+		return nil, errors.New("invalid or missing args")
 	}
+	return cfg, nil
+}
 
+func main() {
+	phs0 := phase.FromContext(context.Background())
+
+	cfg, err := parseFlags()
+	if err != nil {
+		fmt.Printf("Could not get configuration: %v", err)
+		os.Exit(1)
+	}
 	setupSignalHandler(phs0)
 
 	phs1 := phs0.Next()
-	go XMPPBot(phs1, *server, *username, *password)
+	go XMPPBot(phs1, cfg.Server, cfg.Username, cfg.Password)
 
 	<-phs0.Done()
 }
