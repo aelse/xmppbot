@@ -31,13 +31,23 @@ type config struct {
 	Server   string
 	Username string
 	Password string
+	// Garage command
+	MQTTAddr string
+	MQTTUser string
+	MQTTPass string
 }
 
 func parseFlags() (*config, error) {
 	cfg := &config{}
+
 	flag.StringVar(&cfg.Server, "server", "talk.google.com:443", "server")
 	flag.StringVar(&cfg.Username, "username", "", "username")
 	flag.StringVar(&cfg.Password, "password", "", "password")
+
+	flag.StringVar(&cfg.MQTTAddr, "mqtt-addr", "", "garage MQTT server address")
+	flag.StringVar(&cfg.MQTTUser, "mqtt-user", "", "garage mqtt username")
+	flag.StringVar(&cfg.MQTTPass, "mqtt-pass", "", "garage mqtt password")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: example [options]\n")
 		flag.PrintDefaults()
@@ -89,7 +99,8 @@ func XMPPBot(phs phase.Phaser, cfg *config) {
 	}()
 
 	commands := map[string]Command{
-		"ping": ping,
+		"garage": garage(cfg.MQTTAddr, cfg.MQTTUser, cfg.MQTTPass),
+		"ping":   ping,
 	}
 
 	for {
@@ -103,7 +114,7 @@ func XMPPBot(phs phase.Phaser, cfg *config) {
 			fmt.Println(v.Remote, v.Text)
 			cmd := strings.Split(v.Text, " ")[0]
 			if command, exists := commands[cmd]; exists {
-				replyMsg := command(v.Text)
+				replyMsg := command(phs, v.Text)
 				reply := xmpp.Chat{
 					Remote: v.Remote,
 					Type:   "chat",
