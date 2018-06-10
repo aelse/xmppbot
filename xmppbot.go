@@ -111,7 +111,7 @@ func XMPPBot(phs phase.Phaser, cfg *config) {
 		switch v := chat.(type) {
 		case xmpp.Chat:
 			log.Printf("%s: %s\n", v.Remote, v.Text)
-			cmd := strings.Split(v.Text, " ")[0]
+			cmd := strings.ToLower(strings.Split(v.Text, " ")[0])
 			if command, exists := commands[cmd]; exists {
 				replyMsg := command(phs, v.Text)
 				reply := xmpp.Chat{
