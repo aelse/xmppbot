@@ -27,6 +27,7 @@ func setupSignalHandler(phs phase.Phaser) {
 }
 
 type config struct {
+	// Google Talk
 	Server   string
 	Username string
 	Password string
@@ -60,18 +61,18 @@ func main() {
 	setupSignalHandler(phs0)
 
 	phs1 := phs0.Next()
-	go XMPPBot(phs1, cfg.Server, cfg.Username, cfg.Password)
+	go XMPPBot(phs1, cfg)
 
 	<-phs0.Done()
 }
 
-func XMPPBot(phs phase.Phaser, addr, username, password string) {
+func XMPPBot(phs phase.Phaser, cfg *config) {
 	defer phs.Cancel()
 
 	options := xmpp.Options{
-		Host:     addr,
-		User:     username,
-		Password: password,
+		Host:     cfg.Server,
+		User:     cfg.Username,
+		Password: cfg.Password,
 	}
 
 	talk, err := options.NewClient()
