@@ -61,7 +61,7 @@ func garage(addr, username, password string) Command {
 			SubReqs: []*client.SubReq{
 				&client.SubReq{
 					TopicFilter: []byte(topic),
-					QoS:         mqtt.QoS0,
+					QoS:         mqtt.QoS1,
 					// Define the processing of the message handler.
 					Handler: func(topicName, message []byte) {
 						// Saw message to our topic. Flag success by sending nil to error channel.
