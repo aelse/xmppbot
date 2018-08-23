@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -14,6 +16,35 @@ type Command func(context.Context, string) string
 
 func ping(ctx context.Context, msg string) string {
 	return "pong"
+}
+
+func ip(ctx context.Context, msg string) string {
+	var buf bytes.Buffer
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return fmt.Sprintf("Couldn't get interfaces: %v", err)
+	}
+	for _, iface := range ifaces {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			buf.Write([]byte("Could not get ip for interface "))
+			buf.Write([]byte(iface.Name))
+			buf.Write([]byte("\n"))
+			continue
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			buf.Write([]byte(ip))
+			buf.Write([]byte("\n"))
+		}
+	}
+	return buf.String()
 }
 
 func garage(addr, username, password string) Command {

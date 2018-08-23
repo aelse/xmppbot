@@ -100,6 +100,7 @@ func XMPPBot(phs *phase.Phaser, cfg *config) {
 	commands := map[string]Command{
 		"garage": garage(cfg.MQTTAddr, cfg.MQTTUser, cfg.MQTTPass),
 		"ping":   ping,
+		"ip":     ip,
 	}
 
 	for {
