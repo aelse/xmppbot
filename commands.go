@@ -40,7 +40,7 @@ func ip(ctx context.Context, msg string) string {
 			case *net.IPAddr:
 				ip = v.IP
 			}
-			buf.Write([]byte(ip))
+			buf.Write([]byte(ip.String()))
 			buf.Write([]byte("\n"))
 		}
 	}
