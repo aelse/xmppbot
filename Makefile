@@ -5,3 +5,6 @@ xmppbot.linux-arm:
 
 docker-image: xmppbot.linux-arm
 	docker build -t ${IMAGE_NAME}:latest .
+
+clean:
+	rm -f xmppbot.linux-arm xmppbot
