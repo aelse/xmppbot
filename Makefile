@@ -1,6 +1,6 @@
 IMAGE_NAME=aelse/xmppbot
 
-xmppbot.linux-arm:
+xmppbot.linux-arm: *.go
 	GOOS=linux GOARCH=arm go build -o xmppbot.linux-arm
 
 docker-image: xmppbot.linux-arm
