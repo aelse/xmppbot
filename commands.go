@@ -139,6 +139,6 @@ func garage(addr, username, password string) Command {
 		if gate == "ping" {
 			return "Pinged MQTT path successfully."
 		}
-		return "Triggered opening the " + gate + " gate."
+		return "Opening the " + gate + " gate."
 	}
 }
