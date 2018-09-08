@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/aelse/phase"
 	"github.com/mattn/go-xmpp"
@@ -78,16 +79,12 @@ func main() {
 func XMPPBot(phs *phase.Phaser, cfg *config) {
 	defer phs.Cancel()
 
+	var talk *xmpp.Client
+	var err error
 	options := xmpp.Options{
 		Host:     cfg.Server,
 		User:     cfg.Username,
 		Password: cfg.Password,
-	}
-
-	talk, err := options.NewClient()
-	if err != nil {
-		log.Printf("Could not create talk client: %v\n", err)
-		return
 	}
 
 	// Close everything when our context ends.
@@ -104,10 +101,19 @@ func XMPPBot(phs *phase.Phaser, cfg *config) {
 	}
 
 	for {
+		if talk == nil {
+			if talk, err = options.NewClient(); err != nil {
+				log.Printf("Could not create talk client: %v\n", err)
+				return
+			}
+		}
 		chat, err := talk.Recv()
 		if err != nil {
 			log.Printf("Talk client error: %v\n", err)
-			break
+			talk.Close()
+			talk = nil
+			time.Sleep(time.Second) // Delay before reconnection
+			continue
 		}
 		switch v := chat.(type) {
 		case xmpp.Chat:
