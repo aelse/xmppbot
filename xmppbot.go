@@ -35,8 +35,6 @@ type config struct {
 	MQTTAddr string
 	MQTTUser string
 	MQTTPass string
-	// CloudToy command
-	CloudToyAddr string
 }
 
 func parseFlags() (*config, error) {
@@ -49,8 +47,6 @@ func parseFlags() (*config, error) {
 	flag.StringVar(&cfg.MQTTAddr, "mqtt-addr", "", "garage MQTT server address")
 	flag.StringVar(&cfg.MQTTUser, "mqtt-user", "", "garage mqtt username")
 	flag.StringVar(&cfg.MQTTPass, "mqtt-pass", "", "garage mqtt password")
-
-	flag.StringVar(&cfg.CloudToyAddr, "cloud-toy-addr", "", "cloud toy address")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: xmppbot [options]\n")
@@ -99,10 +95,9 @@ func XMPPBot(phs *phase.Phaser, cfg *config) {
 	}()
 
 	commands := map[string]Command{
-		"cloudtoy": cloudtoy(cfg.CloudToyAddr),
-		"garage":   garage(cfg.MQTTAddr, cfg.MQTTUser, cfg.MQTTPass),
-		"ping":     ping,
-		"ip":       ip,
+		"garage": garage(cfg.MQTTAddr, cfg.MQTTUser, cfg.MQTTPass),
+		"ping":   ping,
+		"ip":     ip,
 	}
 
 	for {
