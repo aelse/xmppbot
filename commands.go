@@ -47,6 +47,25 @@ func ip(ctx context.Context, msg string) string {
 	return buf.String()
 }
 
+func cloudtoy(addr string) Command {
+	if addr == "" {
+		return func(ctx context.Context, msg string) string {
+			args := strings.Split(msg, " ")
+			return args[0] + " is not configured."
+		}
+	}
+
+	return func(ctx context.Context, msg string) string {
+		args := strings.Split(msg, " ")
+		usage := fmt.Sprintf("Usage: %s <red|blue|green|off>", args[0])
+
+		if len(args) < 2 || (args[1] != "entry" && args[1] != "exit" && args[1] != "ping") {
+			return usage
+		}
+		gate := args[1]
+	}
+}
+
 func garage(addr, username, password string) Command {
 	if addr == "" || username == "" || password == "" {
 		return func(ctx context.Context, msg string) string {
